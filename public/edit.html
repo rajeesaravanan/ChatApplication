@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Edit Profile</title>
+<style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80') no-repeat center center fixed;
+        background-size: cover;
+        font-family: 'Segoe UI', sans-serif;
+      }
+
+      .bg-wrapper {
+        position: relative;
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .bg-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background:
+          radial-gradient(circle at 20% 30%, rgba(30, 60, 114, 0.4), transparent 60%),
+          radial-gradient(circle at 80% 70%, rgba(42, 82, 152, 0.4), transparent 60%);
+        background-size: cover;
+        animation: pulse 6s ease-in-out infinite;
+        z-index: -2;
+      }
+
+      .bg-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        backdrop-filter: blur(6px);
+        background-color: rgba(0, 0, 0, 0.2);
+        z-index: -1;
+      }
+
+      @keyframes pulse {
+        0%, 100% { background-position: 20% 30%, 80% 70%; }
+        50% { background-position: 25% 35%, 75% 65%; }
+      }
+
+      #editProfileForm {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 25px 20px;
+  width: 95%;
+  max-width: 520px;
+  min-width: 320px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  backdrop-filter: blur(10px);
+  color: #ffffff;
+  font-family: cursive;
+}
+
+      
+
+      h2 {
+        text-align: center;
+        font-size: 28px;
+        color: #ffffff;
+        font-family: cursive;
+        margin-bottom: 25px;
+      }
+
+      input, select {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 16px;
+        border: none;
+        border-radius: 8px;
+        background-color: rgba(255, 255, 255, 0.95);
+        font-size: 14px;
+        color: #333;
+      }
+
+      input[readonly] {
+        background-color: #e0e0e0;
+        color: #666;
+      }
+
+      .button-group {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      button {
+        padding: 10px 24px;
+        background-color: #1a75ff;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: cursive;
+        transition: background 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #004bbd;
+      }
+
+      input[type="file"] {
+        background-color: rgba(255, 255, 255, 0.95);
+      }
+      @media (max-width: 480px) {
+  input, select {
+    margin-bottom: 72px;  
+  }
+
+  #editProfileForm {
+    padding: 24px 18px;
+  }
+
+  h2 {
+    font-size: 24px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+}
+
+
+
+    </style>
+  </head>
+  <body>
+     <div class="bg-wrapper">
+      <form id="editProfileForm" enctype="multipart/form-data">
+    <h2>Edit Profile</h2>
+
+      <input type="text" name="name" placeholder="Name" required />
+      <input type="email" name="email" id="email" placeholder="Email" required readonly/>
+
+      <input type="text" name="education" placeholder="education"  />
+      <select name="gender" id="gender" required>
+        <option value="">Select Gender</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+      <input type="password" name="currentPassword" placeholder="Current Password" />
+<input type="password" name="newPassword" placeholder="New Password" />
+
+
+      
+      <input type="file" name="image" accept="image/*" />
+
+      <div class="button-group">
+      <button type="submit">Save</button>
+      <button type="button" id="cancelButton" >Cancel</button>
+    </div>
+
+    </form>
+
+     </div>
+    <script>
+
+if (!localStorage.getItem("token")) {
+  window.location.href = "login.html";
+}
+
+
+      if (!localStorage.getItem("username")) {
+        window.location.href = "login.html";
+      }
+
+      const form = document.getElementById("editProfileForm");
+      const username = localStorage.getItem("username");
+
+      form.name.value = localStorage.getItem("name");
+      form.email.value = localStorage.getItem("email");
+
+      form.education.value = localStorage.getItem("education");
+      form.gender.value = localStorage.getItem("gender");
+
+
+      
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const username = localStorage.getItem("username")
+        formData.append("username", username);
+        const token = localStorage.getItem("token"); 
+        console.log("Sending token:", token);
+
+
+
+        try {
+          const response = await fetch(
+            "http://192.168.1.128:2700/user/edit-profile",
+            {
+              method: "POST",
+              headers:{
+                'Authorization': `Bearer ${token}`
+              },
+              body: formData,
+            }
+          );
+
+      
+
+          const result = await response.json();  
+
+          if (response.ok) {
+            console.log(" Server responded OK with:", result);
+
+
+            localStorage.setItem("name", result.updatedUser.name);
+            localStorage.setItem("email", result.updatedUser.email || "");
+
+            localStorage.setItem("education", result.updatedUser.education);
+            localStorage.setItem("image", result.updatedUser.image || "")
+            localStorage.setItem("gender", result.updatedUser.gender);
+
+
+           
+            window.location.href = "profile.html";
+          } else {
+            console.warn(" Server returned error:", result);
+
+ if (result.msg === "Incorrect password!") {
+    alert("Incorrect Current Password. Please try again!");
+  } 
+ 
+  else {
+    alert(result.msg || "Something went wrong");
+  }
+}   
+      
+        } catch (err) {
+          console.error(" Frontend error:", err);
+          alert("Something went wrong. Please try again.");
+
+        }
+      });
+
+      document.getElementById("cancelButton").addEventListener("click", () => {
+  window.location.href = "profile.html";
+});
+  if (!localStorage.getItem("token")) {
+    location.replace("login.html"); 
+
+  }
+
+  window.history.pushState(null, null, location.href);
+  window.onpopstate = function () {
+    window.history.go(1);
+  };
+
+    </script>
+    <script src="js/authGuard.js"></script>
+
+  </body>
+</html>
+
+
+

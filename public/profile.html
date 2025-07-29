@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>User Profile</title>
+    <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    
+
+    .bg-wrapper {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .bg-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(30, 60, 114, 0.4), transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(42, 82, 152, 0.4), transparent 60%);
+      background-size: cover;
+      animation: pulse 6s ease-in-out infinite;
+      z-index: -2;
+    }
+
+    .bg-wrapper::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      backdrop-filter: blur(6px);
+      background-color: rgba(0, 0, 0, 0.2);
+      z-index: -1;
+    }
+
+    @keyframes pulse {
+      0%, 100% { background-position: 20% 30%, 80% 70%; }
+      50% { background-position: 25% 35%, 75% 65%; }
+    }
+
+    #profileCard {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 30px;
+      width: 90%;
+      max-width: 550px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+      color: #ffffff;
+      text-align: center;
+      position: relative;
+    }
+
+    #profileCard h2 {
+      font-family: cursive;
+      font-size: 28px;
+      margin-bottom: 25px;
+    }
+
+    .profile-field {
+      margin: 15px 0;
+      font-size: 18px;
+      font-family: cursive;
+      text-align: left;
+    }
+
+    .profile-field strong {
+      color: #add8ff;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #1a75ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: cursive;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #004bbd;
+    }
+
+    #photoContainer img {
+      max-width: 140px;
+      max-height: 140px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      margin-top: 15px;
+    }
+
+    #notificationBox {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #366996;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: none;
+      font-family: Arial;
+      z-index: 999;
+    }
+
+    #activeUsersList {
+      display: none;
+      position: fixed;
+      top: 20px; 
+  right: 20px;
+      background: rgba(181, 162, 162, 0.357);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 999;
+    }
+
+    #activeUsersList h4 {
+      margin-top: 0;
+      color: #20477a;
+    }
+
+    #userList {
+      list-style: none;
+      padding-left: 10px;
+      margin: 0;
+    }
+  </style>
+  </head>
+  <body>
+     <div class="bg-wrapper">
+    <div id="profileCard">
+
+    <div id="photoContainer"></div>
+      <p class="profile-field"><strong>Name:</strong> <span id="name"></span></p>
+      <p class="profile-field"><strong>Email:</strong> <span id="email"></span></p>
+      <p class="profile-field"><strong>Education:</strong> <span id="education"></span></p>
+      <p class="profile-field"><strong>Gender:</strong> <span id="gender"></span></p>
+
+    <div class="button-container">
+      <button id="editProfileBtn">Edit</button>
+      <button id="logoutButton">Logout</button>
+              <button id="toggleUsersBtn">Active Users</button>
+
+    </div>
+
+    <div id="notificationBox"></div>
+
+        <div id="notificationToast" style="
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #1aff98;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  display: none;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+"></div>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+    <script>
+      if (!localStorage.getItem("token")) {
+        window.location.href = "login.html";
+      }
+
+      window.onload = function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get("token");
+
+        if (urlToken) {
+          localStorage.setItem("token", urlToken);
+          window.history.replaceState({}, document.title, "profile.html");
+        }
+
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        //  Fetch Profile Details from server
+        fetch("http://192.168.1.128:2700/user/profile", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Unauthorized");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            document.getElementById("name").textContent = data.name;
+            document.getElementById("email").textContent = data.email;
+            document.getElementById("education").textContent = data.education;
+            document.getElementById("gender").textContent = data.gender;
+
+
+
+            localStorage.setItem("name", data.name || "");
+            localStorage.setItem("username", data.username || "");
+            localStorage.setItem("email", data.email || "");
+            localStorage.setItem("education", data.education || "");
+            localStorage.setItem("gender", data.gender || "male");
+            localStorage.setItem("image", data.image || "");
+
+            const photoContainer = document.getElementById("photoContainer");
+            const imageElement = document.createElement("img");
+            const nameLabel = document.createElement("div");
+
+
+            if (data.image && data.image !== "null" && data.image !== "") {
+              imageElement.src = `http://192.168.1.128:2700/uploads/${data.image}`;
+            } else {
+              imageElement.src =
+                data.gender === "female"
+                  ? "assets/female.jpg"
+                  : "assets/male.jpg";
+            }
+
+
+            nameLabel.textContent = data.name;
+            nameLabel.style.marginTop = "8px";
+            nameLabel.style.color = "#ffffff";
+            nameLabel.style.fontWeight = "bold";
+            nameLabel.style.fontFamily = "cursive";
+            nameLabel.style.textAlign = "center";
+            nameLabel.style.fontSize = "20px";
+
+
+            imageElement.alt = "User Profile Photo";
+            imageElement.style.maxWidth = "200px";
+
+            photoContainer.innerHTML = "";
+            photoContainer.appendChild(imageElement);
+            photoContainer.appendChild(nameLabel); 
+
+            photoContainer.style.display = "block";
+          })
+
+          .catch((err) => {
+            console.error("Error:", err);
+            window.location.href = "login.html";
+          });
+
+        document
+          .getElementById("logoutButton")
+          .addEventListener("click", async function () {
+            const token = localStorage.getItem("token");
+
+            try {
+              await fetch(
+                "http://192.168.1.128:2700/auth/api/logout",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              localStorage.clear();
+              sessionStorage.clear();
+              location.replace("login.html");
+            } catch (err) {
+              console.error("Logout error:", err);
+              alert("Logout failed.");
+            }
+          });
+        document
+          .getElementById("editProfileBtn")
+          .addEventListener("click", () => {
+            window.location.href = "edit.html";
+          });
+      };
+
+      window.history.pushState(null, null, location.href);
+      window.onpopstate = function () {
+        window.history.go(1);
+      };
+
+      const socket = io("http://192.168.1.128:2700");
+      const username = localStorage.getItem("username");
+      let activeUserSet = new Set(); 
+
+      socket.emit("user-online", username); 
+      (
+        socket.on("notify-existing-users", (users) => {
+          users.forEach((user) => {
+            if (user !== username) {
+              activeUserSet.add(user);
+              showNotification(`🟢${user} is active`);
+            }
+          });
+        })
+      );
+socket.on("private-message", ({ from, message }) => {
+  if (from !== username) {
+    showMessageToast(from, message);
+  }
+});
+      socket.on("notify-user-active", (newUser) => {
+        if (newUser !== username) {
+          activeUserSet.add(newUser);
+          showNotification(`🟢 ${newUser} is active`);
+        }
+      });
+
+      function showNotification(message) {
+        const box = document.getElementById("notificationBox");
+        box.textContent = message;
+        box.style.display = "block";
+
+        setTimeout(() => {
+          box.style.display = "none";
+        }, 3000);
+      }
+
+      function updateActiveUsersList() {
+        const userListElement = document.getElementById("userList");
+        userListElement.innerHTML = "";
+
+        const sortedUsers = Array.from(activeUserSet).sort();
+        sortedUsers.forEach((user) => {
+          const li = document.createElement("li");
+          li.textContent = user;
+          userListElement.appendChild(li);
+        });
+      }
+
+      window.addEventListener("beforeunload", () => {
+        socket.disconnect();
+      });
+
+      socket.on("update-active", ({ username: offlineUser, status }) => {
+        if (status === "offline") {
+          activeUserSet.delete(offlineUser);
+          if (offlineUser !== username) {
+            showNotification(`🔴 ${offlineUser} went offline`);
+          }
+        }
+      });
+
+      const toggleBtn = document.getElementById("toggleUsersBtn");
+
+      toggleBtn.addEventListener("click", () => {
+  window.location.href = "active-users.html";
+});
+
+function showMessageToast(sender, msg) {
+  const toast = document.getElementById("notificationToast");
+  // toast.textContent = `📩 New message from ${sender}: ${msg}`;
+    toast.textContent = `📩 ${sender}`;
+
+  toast.style.display = "block";
+
+  setTimeout(() => {
+    toast.style.display = "none";
+  }, 4000);
+}
+
+    </script>
+    <script src="js/authGuard.js"></script>
+
+  </body>
+</html>

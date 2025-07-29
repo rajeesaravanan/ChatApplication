@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f9f9f9;
+    }
+    .message {
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="message">Logging you in, please wait...</div>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (token) {
+      localStorage.setItem("token", token);
+      window.location.href = "profile.html";
+    } else {
+      window.location.href = "login.html";
+    }
+
+
+
+
+
+  </script>
+
+</body>
+</html>
